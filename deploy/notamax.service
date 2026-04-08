@@ -4,10 +4,9 @@ After=network.target
 
 [Service]
 Type=simple
-# Создай: sudo useradd -r -s /usr/sbin/nologin notamax && sudo chown -R notamax:notamax /opt/notamax
-User=notamax
-Group=notamax
-WorkingDirectory=/opt/notamax/server
+User=root
+Group=root
+WorkingDirectory=/root/notamax/server
 Environment=NODE_ENV=production
 Environment=PORT=3001
 ExecStart=/usr/bin/node dist/index.js

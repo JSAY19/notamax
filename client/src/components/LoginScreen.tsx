@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useChatStore } from "../store/chatStore";
 import { useCrypto } from "../hooks/useCrypto";
@@ -25,6 +25,15 @@ export default function LoginScreen() {
   const [busy, setBusy] = useState(false);
   const [recoveryKeyShown, setRecoveryKeyShown] = useState<string | null>(null);
   const [savedConfirm, setSavedConfirm] = useState(false);
+  /** Браузер даёт Web Crypto (subtle) только на HTTPS и localhost — не на http://IP */
+  const [needsHttps, setNeedsHttps] = useState(false);
+
+  useEffect(() => {
+    setNeedsHttps(
+      typeof window !== "undefined" &&
+        (!window.isSecureContext || !globalThis.crypto?.subtle)
+    );
+  }, []);
 
   const setUsername = useChatStore((s) => s.setUsername);
   const { loadKeyPair } = useCrypto();
@@ -36,6 +45,12 @@ export default function LoginScreen() {
 
   const handleRestore = async () => {
     if (!stored) return;
+    if (needsHttps) {
+      setError(
+        "Нужен HTTPS или откройте сайт через localhost. По http://IP шифрование в браузере недоступно."
+      );
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -60,6 +75,12 @@ export default function LoginScreen() {
   const handleCreate = async () => {
     const name = usernameInput.trim();
     if (!name) return;
+    if (needsHttps) {
+      setError(
+        "Нужен HTTPS или localhost. Откройте сайт по https:// (домен + сертификат) — иначе Web Crypto API не работает на http://IP."
+      );
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -104,6 +125,18 @@ export default function LoginScreen() {
           <p className="text-gray-500 mt-2 text-sm">
             E2E шифрование · ключ восстановления показывается один раз
           </p>
+          {needsHttps && (
+            <p className="mt-4 text-left text-sm text-amber-200 bg-amber-950/50 border border-amber-600/40 rounded-xl px-4 py-3">
+              Сейчас страница открыта по незащищённому HTTP (не localhost). Браузер
+              блокирует Web Crypto — создать аккаунт нельзя. Подключите{" "}
+              <strong>HTTPS</strong> (Nginx + Let&apos;s Encrypt на домене) или для
+              теста используйте SSH-туннель:{" "}
+              <code className="text-xs bg-black/30 px-1 rounded">
+                ssh -L 3010:127.0.0.1:3010 root@ВАШ_IP
+              </code>{" "}
+              и откройте <strong>http://127.0.0.1:3010</strong> у себя.
+            </p>
+          )}
         </div>
 
         <AnimatePresence mode="wait">
