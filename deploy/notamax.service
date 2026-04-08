@@ -4,11 +4,14 @@ After=network.target
 
 [Service]
 Type=simple
-User=root
-Group=root
-WorkingDirectory=/root/notamax/server
+User=notamax
+Group=notamax
+WorkingDirectory=/opt/notamax/server
 Environment=NODE_ENV=production
-Environment=PORT=3001
+Environment=PORT=3010
+# Если фронт и API с одного хоста — ALLOWED_ORIGINS можно не задавать.
+# Для жёсткого списка разрешённых origin:
+# Environment=ALLOWED_ORIGINS=https://your-domain.example
 ExecStart=/usr/bin/node dist/index.js
 Restart=on-failure
 RestartSec=5

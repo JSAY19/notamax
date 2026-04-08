@@ -1,0 +1,42 @@
+# Временный бесплатный HTTPS без домена: самоподписанный сертификат.
+# Браузер покажет предупреждение — «Дополнительные сведения» → перейти (один раз).
+# После этого window.isSecureContext = true, Web Crypto в notamax заработает.
+#
+# 1) Замени YOUR_VPS_IP на IP сервера (как в браузере).
+# 2) Создай каталог и ключи на VPS:
+#    sudo mkdir -p /etc/nginx/ssl
+#    sudo openssl req -x509 -nodes -days 90 -newkey rsa:2048 \
+#      -keyout /etc/nginx/ssl/notamax.key \
+#      -out /etc/nginx/ssl/notamax.crt \
+#      -subj "/CN=YOUR_VPS_IP" \
+#      -addext "subjectAltName=IP:YOUR_VPS_IP"
+# 3) Подставь тот же IP в server_name ниже.
+# 4) Порт в proxy_pass должен совпадать с PORT в notamax.service (например 3010).
+# 5) sudo nginx -t && sudo systemctl reload nginx
+# 6) Открывай https://YOUR_VPS_IP/  (не http)
+
+server {
+    listen 443 ssl;
+    server_name YOUR_VPS_IP;
+
+    ssl_certificate     /etc/nginx/ssl/notamax.crt;
+    ssl_certificate_key /etc/nginx/ssl/notamax.key;
+
+    location / {
+        proxy_pass http://127.0.0.1:3010;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_buffering off;
+    }
+}
+
+server {
+    listen 80;
+    server_name YOUR_VPS_IP;
+    return 301 https://$host$request_uri;
+}
