@@ -1,0 +1,18 @@
+[Unit]
+Description=notamax (Node + Socket.io + static)
+After=network.target
+
+[Service]
+Type=simple
+# Создай: sudo useradd -r -s /usr/sbin/nologin notamax && sudo chown -R notamax:notamax /opt/notamax
+User=notamax
+Group=notamax
+WorkingDirectory=/opt/notamax/server
+Environment=NODE_ENV=production
+Environment=PORT=3001
+ExecStart=/usr/bin/node dist/index.js
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
